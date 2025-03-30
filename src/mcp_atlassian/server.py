@@ -606,6 +606,12 @@ async def list_tools() -> list[Tool]:
                                 "minimum": 1,
                                 "maximum": 50,
                             },
+                            "startAt": {
+                                "type": "number",
+                                "description": "Starting index for search results (0-based)",
+                                "default": 0,
+                                "minimum": 0,
+                            },
                             "projects_filter": {
                                 "type": "string",
                                 "description": "Comma-separated list of project keys to filter results by. Overrides the environment variable JIRA_PROJECTS_FILTER if provided.",
@@ -623,6 +629,7 @@ async def list_tools() -> list[Tool]:
                             "project_key": {
                                 "type": "string",
                                 "description": "The project key",
+                                },
                             },
                             "limit": {
                                 "type": "number",
@@ -630,6 +637,12 @@ async def list_tools() -> list[Tool]:
                                 "default": 10,
                                 "minimum": 1,
                                 "maximum": 50,
+                            },
+                            "startAt": {
+                                "type": "number",
+                                "description": "Starting index for issues (0-based)",
+                                "default": 0,
+                                "minimum": 0,
                             },
                         },
                         "required": ["project_key"],
@@ -644,6 +657,7 @@ async def list_tools() -> list[Tool]:
                             "epic_key": {
                                 "type": "string",
                                 "description": "The key of the epic (e.g., 'PROJ-123')",
+                                },
                             },
                             "limit": {
                                 "type": "number",
@@ -651,6 +665,12 @@ async def list_tools() -> list[Tool]:
                                 "default": 10,
                                 "minimum": 1,
                                 "maximum": 50,
+                            },
+                            "startAt": {
+                                "type": "number",
+                                "description": "Starting index for issues (0-based)",
+                                "default": 0,
+                                "minimum": 0,
                             },
                         },
                         "required": ["epic_key"],
@@ -1007,7 +1027,10 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
 
             # Get the child pages
             pages = ctx.confluence.get_page_children(
-                page_id=parent_id, expand=expand, limit=limit, convert_to_markdown=True
+                page_id=parent_id,
+                expand=expand,
+                limit=limit,
+                convert_to_markdown=True,
             )
 
             # Format results using the to_simplified_dict method
@@ -1243,9 +1266,14 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
             )
             limit = min(int(arguments.get("limit", 10)), 50)
             projects_filter = arguments.get("projects_filter")
+            start_at = int(arguments.get("startAt", 0))  # Get startAt, default to 0
 
             issues = ctx.jira.search_issues(
-                jql, fields=fields, limit=limit, projects_filter=projects_filter
+                jql,
+                fields=fields,
+                limit=limit,
+                start=start_at,  # Pass start_at here
+                projects_filter=projects_filter,
             )
 
             # Format results using the to_simplified_dict method
@@ -1264,8 +1292,11 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
 
             project_key = arguments.get("project_key")
             limit = min(int(arguments.get("limit", 10)), 50)
+            start_at = int(arguments.get("startAt", 0))  # Get startAt
 
-            issues = ctx.jira.get_project_issues(project_key, limit=limit)
+            issues = ctx.jira.get_project_issues(
+                project_key, start=start_at, limit=limit
+            )
 
             # Format results
             project_issues = [issue.to_simplified_dict() for issue in issues]
@@ -1283,9 +1314,10 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
 
             epic_key = arguments.get("epic_key")
             limit = min(int(arguments.get("limit", 10)), 50)
+            start_at = int(arguments.get("startAt", 0))  # Get startAt
 
             # Get issues linked to the epic
-            issues = ctx.jira.get_epic_issues(epic_key, limit=limit)
+            issues = ctx.jira.get_epic_issues(epic_key, start=start_at, limit=limit)
 
             # Format results
             epic_issues = [issue.to_simplified_dict() for issue in issues]

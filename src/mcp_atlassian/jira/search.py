@@ -109,7 +109,9 @@ class SearchMixin(JiraClient):
         jql = f"project = {project_key} ORDER BY created DESC"
         return self.search_issues(jql, start=start, limit=limit)
 
-    def get_epic_issues(self, epic_key: str, limit: int = 50) -> list[JiraIssue]:
+    def get_epic_issues(
+        self, epic_key: str, start: int = 0, limit: int = 50
+    ) -> list[JiraIssue]:
         """
         Get all issues linked to a specific epic.
 
@@ -145,7 +147,7 @@ class SearchMixin(JiraClient):
             # Try with 'issueFunction in issuesScopedToEpic'
             try:
                 jql = f'issueFunction in issuesScopedToEpic("{epic_key}")'
-                return self.search_issues(jql, limit=limit)
+                return self.search_issues(jql, start=start, limit=limit)
             except Exception as e:
                 # Log exception but continue with fallback
                 logger.warning(
@@ -154,7 +156,7 @@ class SearchMixin(JiraClient):
 
             # Fallback to 'Epic Link' field
             jql = f"'Epic Link' = {epic_key}"
-            return self.search_issues(jql, limit=limit)
+            return self.search_issues(jql, start=start, limit=limit)
 
         except ValueError:
             # Re-raise ValueError for non-epic issues

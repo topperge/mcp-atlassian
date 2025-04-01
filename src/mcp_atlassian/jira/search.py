@@ -31,7 +31,7 @@ class SearchMixin(JiraClient):
         Args:
             jql: JQL query string
             fields: Fields to return (comma-separated string, list, tuple, set, or "*all")
-            start: Starting index
+            start: Starting index if number of issues is greater than the limit
             limit: Maximum issues to return
             expand: Optional items to expand (comma-separated)
             projects_filter: Optional comma-separated list of project keys to filter by, overrides config
@@ -97,7 +97,7 @@ class SearchMixin(JiraClient):
 
         Args:
             project_key: The project key
-            start: Starting index
+            start: Starting index if results higher than the limit
             limit: Maximum results to return
 
         Returns:
@@ -118,6 +118,7 @@ class SearchMixin(JiraClient):
         Args:
             epic_key: The key of the epic (e.g. 'PROJ-123')
             limit: Maximum number of issues to return
+            start: Sets the offset for the number of issues returned if returning more than limit
 
         Returns:
             List of JiraIssue models representing the issues linked to the epic

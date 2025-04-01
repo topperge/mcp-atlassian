@@ -4,7 +4,7 @@ import os
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlparse
 
 from mcp.server import Server
@@ -629,7 +629,6 @@ async def list_tools() -> list[Tool]:
                             "project_key": {
                                 "type": "string",
                                 "description": "The project key",
-                                },
                             },
                             "limit": {
                                 "type": "number",
@@ -657,7 +656,6 @@ async def list_tools() -> list[Tool]:
                             "epic_key": {
                                 "type": "string",
                                 "description": "The key of the epic (e.g., 'PROJ-123')",
-                                },
                             },
                             "limit": {
                                 "type": "number",
@@ -737,9 +735,11 @@ async def list_tools() -> list[Tool]:
                             "properties": {
                                 "project_key": {
                                     "type": "string",
-                                    "description": "The JIRA project key (e.g. 'PROJ', 'DEV', 'SUPPORT'). "
-                                    "This is the prefix of issue keys in your project. "
-                                    "Never assume what it might be, always ask the user.",
+                                    "description": (
+                                        "The JIRA project key (e.g. 'PROJ', 'DEV', 'SUPPORT'). "
+                                        "This is the prefix of issue keys in your project. "
+                                        "Never assume what it might be, always ask the user."
+                                    ),
                                 },
                                 "summary": {
                                     "type": "string",
@@ -764,13 +764,15 @@ async def list_tools() -> list[Tool]:
                                 },
                                 "additional_fields": {
                                     "type": "string",
-                                    "description": "Optional JSON string of additional fields to set. "
-                                    "Examples:\n"
-                                    '- Set priority: {"priority": {"name": "High"}}\n'
-                                    '- Add labels: {"labels": ["frontend", "urgent"]}\n'
-                                    '- Add components: {"components": [{"name": "UI"}]}\n'
-                                    '- Link to parent (for any issue type): {"parent": "PROJ-123"}\n'
-                                    '- Custom fields: {"customfield_10010": "value"}',
+                                    "description": (
+                                        "Optional JSON string of additional fields to set. "
+                                        "Examples:\n"
+                                        '- Set priority: {"priority": {"name": "High"}}\n'
+                                        '- Add labels: {"labels": ["frontend", "urgent"]}\n'
+                                        '- Add components: {"components": [{"name": "UI"}]}\n'
+                                        '- Link to parent (for any issue type): {"parent": "PROJ-123"}\n'
+                                        '- Custom fields: {"customfield_10010": "value"}'
+                                    ),
                                     "default": "{}",
                                 },
                             },
@@ -789,9 +791,11 @@ async def list_tools() -> list[Tool]:
                                 },
                                 "fields": {
                                     "type": "string",
-                                    "description": "A valid JSON object of fields to update as a string. "
-                                    'Example: \'{"summary": "New title", "description": "Updated description", '
-                                    '"priority": {"name": "High"}, "assignee": {"name": "john.doe"}}\'',
+                                    "description": (
+                                        "A valid JSON object of fields to update as a string. "
+                                        'Example: \'{"summary": "New title", "description": "Updated description", '
+                                        '"priority": {"name": "High"}, "assignee": {"name": "john.doe"}}\''
+                                    ),
                                 },
                                 "additional_fields": {
                                     "type": "string",
@@ -941,9 +945,10 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
 
     try:
         # Helper functions for formatting results
-        def format_comment(comment: Any) -> dict:
+        def format_comment(comment: Any) -> dict[str, Any]:
             if hasattr(comment, "to_simplified_dict"):
-                return comment.to_simplified_dict()
+                # Cast the return value to dict[str, Any] to satisfy the type checker
+                return cast(dict[str, Any], comment.to_simplified_dict())
             return {
                 "id": comment.get("id"),
                 "author": comment.get("author", {}).get("displayName", "Unknown"),

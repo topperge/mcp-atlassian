@@ -1030,14 +1030,6 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
             if include_content and "body" not in expand:
                 expand = f"{expand},body.storage"
 
-            # Get the child pages
-            pages = ctx.confluence.get_page_children(
-                page_id=parent_id,
-                expand=expand,
-                limit=limit,
-                convert_to_markdown=True,
-            )
-
             # Format results using the to_simplified_dict method
             child_pages = [page.to_simplified_dict() for page in pages]
 

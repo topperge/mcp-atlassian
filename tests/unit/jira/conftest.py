@@ -67,3 +67,18 @@ def jira_client(mock_config, mock_atlassian_jira):
         # Replace the actual Jira instance with our mock
         client.jira = mock_atlassian_jira
         yield client
+
+
+@pytest.fixture
+def search_mixin(mock_config, mock_atlassian_jira):
+    """Create a SearchMixin instance with mocked dependencies."""
+    from mcp_atlassian.jira.search import SearchMixin
+
+    with patch("atlassian.Jira") as mock_jira_class:
+        mock_jira_class.return_value = mock_atlassian_jira
+
+        mixin = SearchMixin(config=mock_config)
+        # Replace the actual Jira instance with our mock
+        mixin.jira = mock_atlassian_jira
+        yield mixin
+

@@ -201,6 +201,11 @@ def cleanup_resources(
 
 
 # Only use asyncio backend for anyio tests
+import json
+from mcp.types import TextContent
+
+from mcp_atlassian.server import app, call_tool
+
 pytestmark = pytest.mark.anyio(backends=["asyncio"])
 
 
@@ -1151,3 +1156,124 @@ async def test_jira_create_epic_two_step(
         raise
     finally:
         cleanup_resources()
+
+
+# Tool Validation Tests (Requires --use-real-data)
+# These tests use the server's call_tool handler to test the full flow
+@pytest.mark.usefixtures("use_real_jira_data")
+class TestRealToolValidation:
+    """
+    Test class for validating tool calls with real API data.
+    """
+
+    @pytest.mark.anyio
+    async def test_jira_search_with_startAt(
+        self, use_real_jira_data: bool, test_project_key: str
+    ) -> None:
+        """Test the jira_search tool with the startAt parameter."""
+        if not use_real_jira_data:
+            pytest.skip("Real Jira data testing is disabled")
+
+        jql = f'project = "{test_project_key}" ORDER BY created ASC'
+        limit = 1
+
+        # Call 1: startAt = 0
+        args1 = {"jql": jql, "limit": limit, "startAt": 0}
+        result1_content: Sequence[TextContent] = await call_tool("jira_search", args1)
+        assert result1_content and isinstance(result1_content[0], TextContent)
+        results1 = json.loads(result1_content[0].text)
+
+        # Call 2: startAt = 1
+        args2 = {"jql": jql, "limit": limit, "startAt": 1}
+        result2_content: Sequence[TextContent] = await call_tool("jira_search", args2)
+        assert result2_content and isinstance(result2_content[0], TextContent)
+        results2 = json.loads(result2_content[0].text)
+
+        # Assertions (assuming project has at least 2 issues)
+        assert isinstance(results1, list)
+        assert isinstance(results2, list)
+
+        if len(results1) > 0 and len(results2) > 0:
+            assert results1[0]["key"] != results2[0]["key"], (
+                f"Expected different issues with startAt=0 and startAt=1, but got {results1[0]['key']} for both."
+                f" Ensure project '{test_project_key}' has at least 2 issues."
+            )
+        elif len(results1) <= 1:
+            pytest.skip(f"Project {test_project_key} has less than 2 issues, cannot test pagination.")
+
+    @pytest.mark.anyio
+    async def test_jira_get_project_issues_with_startAt(
+        self, use_real_jira_data: bool, test_project_key: str
+    ) -> None:
+        """Test the jira_get_project_issues tool with the startAt parameter."""
+        if not use_real_jira_data:
+            pytest.skip("Real Jira data testing is disabled")
+
+        limit = 1
+
+        # Call 1: startAt = 0
+        args1 = {"project_key": test_project_key, "limit": limit, "startAt": 0}
+        result1_content: Sequence[TextContent] = await call_tool(
+            "jira_get_project_issues", args1
+        )
+        assert result1_content and isinstance(result1_content[0], TextContent)
+        results1 = json.loads(result1_content[0].text)
+
+        # Call 2: startAt = 1
+        args2 = {"project_key": test_project_key, "limit": limit, "startAt": 1}
+        result2_content: Sequence[TextContent] = await call_tool(
+            "jira_get_project_issues", args2
+        )
+        assert result2_content and isinstance(result2_content[0], TextContent)
+        results2 = json.loads(result2_content[0].text)
+
+        # Assertions (assuming project has at least 2 issues)
+        assert isinstance(results1, list)
+        assert isinstance(results2, list)
+
+        if len(results1) > 0 and len(results2) > 0:
+            assert results1[0]["key"] != results2[0]["key"], (
+                f"Expected different issues with startAt=0 and startAt=1, but got {results1[0]['key']} for both."
+                f" Ensure project '{test_project_key}' has at least 2 issues."
+            )
+        elif len(results1) <= 1:
+            pytest.skip(f"Project {test_project_key} has less than 2 issues, cannot test pagination.")
+
+    @pytest.mark.anyio
+    async def test_jira_get_epic_issues_with_startAt(
+        self, use_real_jira_data: bool, test_epic_key: str
+    ) -> None:
+        """Test the jira_get_epic_issues tool with the startAt parameter."""
+        if not use_real_jira_data:
+            pytest.skip("Real Jira data testing is disabled")
+
+        limit = 1
+
+        # Call 1: startAt = 0
+        args1 = {"epic_key": test_epic_key, "limit": limit, "startAt": 0}
+        result1_content: Sequence[TextContent] = await call_tool(
+            "jira_get_epic_issues", args1
+        )
+        assert result1_content and isinstance(result1_content[0], TextContent)
+        results1 = json.loads(result1_content[0].text)
+
+        # Call 2: startAt = 1
+        args2 = {"epic_key": test_epic_key, "limit": limit, "startAt": 1}
+        result2_content: Sequence[TextContent] = await call_tool(
+            "jira_get_epic_issues", args2
+        )
+        assert result2_content and isinstance(result2_content[0], TextContent)
+        results2 = json.loads(result2_content[0].text)
+
+        # Assertions (assuming epic has at least 2 issues)
+        assert isinstance(results1, list)
+        assert isinstance(results2, list)
+
+        if len(results1) > 0 and len(results2) > 0:
+            assert results1[0]["key"] != results2[0]["key"], (
+                f"Expected different issues with startAt=0 and startAt=1, but got {results1[0]['key']} for both."
+                f" Ensure epic '{test_epic_key}' has at least 2 linked issues."
+            )
+        elif len(results1) <= 1:
+            pytest.skip(f"Epic {test_epic_key} has less than 2 issues, cannot test pagination.")
+
